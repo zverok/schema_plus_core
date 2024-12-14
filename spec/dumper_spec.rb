@@ -79,6 +79,14 @@ describe SchemaMonkey::Middleware::Dumper do
     Then { expect(dump use_middleware: false).to match(/\\"substring\\"\(\(random/) }
   end
 
+  context "column with a whitespace", postgresql: :only do
+    before(:each) do
+      migration.execute %Q{ALTER TABLE "things" ADD "whitespaced column" integer}
+    end
+
+    Then { expect(dump use_middleware: false).to include('t.integer "whitespaced column"') }
+  end
+
   context TestDumper::Middleware::Dumper::Initial do
     Then { expect(dump).to match(/Schema([\[\].0-9]+)?[.]define.*do\s+#{middleware}/) }
   end
