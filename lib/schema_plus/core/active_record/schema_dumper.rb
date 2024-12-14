@@ -79,7 +79,7 @@ module SchemaPlus
                 %r{
                   ^
                   t\.(?<type>\S+) \s*
-                    [:'"](?<name>[^"\s]+)[,"]? \s*
+                    (:(?<name>[a-z_]+)|"(?<name>[^"]+)"|'(?<name>[^']+)') \s*
                     ,? \s*
                     (?<options>.*)
                   $
