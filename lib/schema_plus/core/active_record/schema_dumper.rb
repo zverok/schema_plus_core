@@ -16,7 +16,14 @@ module SchemaPlus
 
         def dump(stream)
           @dump = SchemaDump.new(self)
-          super stream
+
+          # If some other gem has a SchemaDumper, and it is higher than us in inheritance chain,
+          # it still can write something into a "real" stream that would evade our redefined methods.
+          # Tentatively consider that all it wrote can go to "header" (though it might be too naive).
+          temp_stream = StringIO.new
+          super temp_stream
+          @dump.header += temp_stream.string
+
           @dump.assemble(stream)
         end
 
@@ -54,7 +61,15 @@ module SchemaPlus
 
         def tables(_)
           SchemaMonkey::Middleware::Dumper::Tables.start(dumper: self, connection: @connection, dump: @dump) do |env|
-            super nil
+            # Other gems SchemaDumpers might redefine tables and, besides using methods like `table` inside
+            # (which we override), they might also write directly to a stream.
+            # For examples, https://github.com/bibendi/activerecord-postgres_enum/blob/v2.1.0/lib/active_record/postgres_enum/schema_dumper.rb
+            # This gem overrides `tables` to drop `create_enum` statements into the stream before table definitions.
+            #
+            # Tentatively consider whatever is written this way as part of the header, though it might be too naive.
+            stream = StringIO.new
+            super stream
+            @dump.header += stream.string
           end
         end
 
